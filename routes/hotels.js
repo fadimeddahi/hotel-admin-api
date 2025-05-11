@@ -7,19 +7,23 @@ const {
   updateHotel,
   deleteHotel,
   incrementBookings
-} = require('../controllers/hotelController');
+} = require('../controllers/hotels');
 const { protect, authorize } = require('../middleware/auth');
 
-router.route('/')
-  .get(getHotels)
-  .post(protect, authorize('admin'), createHotel);
+// Public routes - anyone can access
+router.get('/', getHotels);
+router.get('/:id', getHotel);
 
-router.route('/:id')
-  .get(getHotel)
-  .put(protect, authorize('admin'), updateHotel)
-  .delete(protect, authorize('admin'), deleteHotel);
+// Protected routes with role-based authorization
+router.post('/', protect, authorize('admin', 'hotel_owner'), createHotel);
 
-router.route('/:id/book')
-  .put(protect, incrementBookings);
+// Hotel owners can only update their own hotels (will need controller modification)
+router.put('/:id', protect, authorize('admin', 'hotel_owner'), updateHotel);
+
+// Only admin can delete hotels
+router.delete('/:id', protect, authorize('admin'), deleteHotel);
+
+// Tourists and admins can book hotels
+router.put('/:id/book', protect, authorize('tourist', 'admin'), incrementBookings);
 
 module.exports = router;
